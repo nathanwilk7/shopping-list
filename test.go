@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -14,6 +15,7 @@ type Item struct {
 	Name string `json:"name"`
 	Lat float64 `json:"lat"`
 	Lon float64 `json:"lon"`
+	Quantity int `json:"quantity"`
 }
 
 func itemsHandler (w http.ResponseWriter, r *http.Request) {
@@ -80,7 +82,7 @@ func listHandler (w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		fields := strings.Split(line, ",")
-		name, latStr, lonStr := fields[0], fields[1], strings.TrimSpace(fields[2])
+		name, latStr, lonStr, quantityStr := fields[0], fields[1], fields[2], strings.TrimSpace(fields[3])
 		lat, err := strconv.ParseFloat(latStr, 64)
 		if err != nil {
 			fmt.Fprintf(w, "%v", err)
@@ -93,10 +95,18 @@ func listHandler (w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("%v", err)
 			break
 		}
+		quantityInt64, err := strconv.ParseInt(quantityStr, 10, 32)
+                if err != nil {
+                       	fmt.Fprintf(w, "%v", err)
+                        fmt.Printf("%v", err)
+                        break
+               	}
+		quantity := int(quantityInt64)
 		items = append(items, Item{
 			Name: name,
 			Lat: lat,
 			Lon: lon,
+			Quantity: quantity,
 		})
 		if err != nil {
 			fmt.Fprintf(w, "%v", err)
@@ -129,7 +139,7 @@ func saveHandler (w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "%v", err)
 	}
 	for _, item := range items {
-		f.Write([]byte(fmt.Sprintf("%s,%f,%f\n", item.Name, item.Lat, item.Lon)))
+		f.Write([]byte(fmt.Sprintf("%s,%f,%f,%d\n", item.Name, item.Lat, item.Lon, item.Quantity)))
 	}
 }
 
@@ -152,10 +162,25 @@ func addHandler (w http.ResponseWriter, r *http.Request) {
 	f.Write([]byte(fmt.Sprintf("%s,%f,%f\n", item.Name, item.Lat, item.Lon)))
 }
 
+func indexHandler (w http.ResponseWriter, r *http.Request) {
+	f, err := ioutil.ReadFile("index.html")
+	if err != nil {
+		fmt.Println(err)
+		fmt.Fprintf(w, "%v", err)
+		return
+	}
+	fmt.Fprintf(w, "%s", f)
+}
+
 func main () {
 	http.HandleFunc("/items", itemsHandler)
 	http.HandleFunc("/list", listHandler)
 	http.HandleFunc("/save", saveHandler)
 	http.HandleFunc("/add", addHandler)
-	http.ListenAndServe(":80", nil)
+	http.HandleFunc("/", indexHandler)
+	err := http.ListenAndServeTLS(":443", "server.crt", "server.key", nil)
+    	if err != nil {
+        	fmt.Println("ListenAndServe: ", err)
+    	}
+	//http.ListenAndServe(":443", nil)
 }

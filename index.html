@@ -89,11 +89,11 @@
     <div class = "col-md-6">
       <input type="text" id="searchInput" onkeyup="filterList()" placeholder="Search or add item..">
       <button class='btn' onclick='addItem()'>Add</button>
-	<ul id="itemList">TODO: Sort list on backend
+	<ul id="itemList">
 	</ul>
     </div>
 	<script>
-	  let baseURL = 'https://ec2-34-203-205-112.compute-1.amazonaws.com';
+	  let baseURL = '';
 	  let getItemsPath = '/items';
 	  let saveMyListPath = '/save';
 	  let getMyListPath = '/list';
@@ -116,7 +116,7 @@
 	  function saveList() {
 	  // TODO: loop through myListVar and save mylist and locations to web server as 'current list'
 	  $.post(baseURL + saveMyListPath, JSON.stringify(myListVar), function(data, status) {
-	  alert('data' + data + 'status' + status);
+	  console.log('data' + data + 'status' + status);
 	  });
 	  }
 
@@ -134,7 +134,7 @@
 	  function addItem() {
 		var itemName = document.getElementById('searchInput').value;
 		$.post(baseURL + addItemPath, JSON.stringify(newItem(itemName)), function(data, status) {
-		alert('data' + data + 'status' + status);
+		console.log('data' + data + 'status' + status);
 		});
 	  document.getElementById('searchInput').value = '';
 	  var thisItem = newItem(itemName);
@@ -193,6 +193,10 @@ function appendToMyList(arg) {
 		myListSelectOption.value = j;
 		myListSelectOption.innerHTML = j;
 		myListSelect.appendChild(myListSelectOption);
+	}
+	myListSelect.value = arg.quantity ? arg.quantity : 1;
+	myListSelect.onchange = function() {
+		arg.quantity = parseInt(myListSelect.value);
 	}
 	myListLi.appendChild(myListSelect);
 	if (arg.lat == 0.0) {
@@ -292,6 +296,7 @@ function permuteMyItems(a, l, r, res) {
 										  return {'name': name,
 										  'lat': 0.0,
 										  'lon': 0.0,
+											'quantity': 1,
 										  }
 										  }
 
