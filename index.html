@@ -184,7 +184,7 @@ function appendToMyList(arg) {
 	myListA.href = '#';
 	myListA.innerHTML = arg.name;
 	myListA.onclick = function(a) {
-		return function() {if (a.style.textDecoration == 'line-through') {a.style.textDecoration = ''} else {a.style.textDecoration = 'line-through'}}
+		return function() {if (a.style.textDecoration == 'line-through') {a.style.textDecoration = ''; a.style.backgroundColor = '#f6f6f6';} else {a.style.textDecoration = 'line-through'; a.style.backgroundColor = '#656565'; }}
 	}(myListA);
 	var myListSelect = document.createElement('select');
 	myListSelect.style = 'float:right;';
