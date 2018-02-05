@@ -1,0 +1,69 @@
+function getDist(start, items, end) {
+	var distSoFar = 0;
+	if (items.length == 0) {
+		return Math.pow(start.lat - end.lat, 2) + Math.pow(start.lon - end.lon, 2);
+	}
+	distSoFar += Math.pow(start.lat - items[0].lat, 2) + Math.pow(start.lon - items[0].lon, 2);
+	for (var i = 1; i < items.length - 1; i++) {
+		distSoFar += Math.pow(items[i].lat - items[i + 1].lat, 2) + Math.pow(items[i].lon - items[i+1].lon, 2);
+	}
+	distSoFar += Math.pow(items[items.length - 1].lat - end.lat, 2) + Math.pow(items[items.length - 1].lon - end.lon, 2);
+	return distSoFar;
+}
+
+function permuteMyItems(a, l, r, res) {
+	if (l === r) {
+		var toPush = []
+		for (var i = 0; i < a.length; i++) {
+			toPush.push(a[i]);
+		}
+		res.push(toPush);
+	} else {
+		for (var i = l; i < r; i++) {
+			var temp = a[l];
+			a[l] = a[i];
+			a[i] = temp;
+			permuteMyItems(a, l + 1, r, res);
+			temp = a[l];
+			a[l] = a[i];
+			a[i] = temp;
+		}
+	}
+}
+
+function sortMyItems(myItems) {
+	var res = [];
+	var toPermute = []
+	var needLocations = []
+	for (var i = 0; i < myItems.length; i++) {
+		if (myItems[i].lat !== 0) {
+			toPermute.push(myItems[i]);
+		} else {
+			needLocations.push(myItems[i]);
+		}
+	}
+	permuteMyItems(toPermute, 0, myItems.length, res);
+	var start = {lat: 35, lon: 105};
+	var end = {lat: 45, lon: 115};
+	var bestDist = 999999999;
+	var bestIndex = 0;
+	for (var i = 0; i < res.length; i++) {
+		var curDist = getDist(start, res[i], end);
+		if (curDist < bestDist) {
+			bestDist = curDist;
+			bestIndex = i;
+		}
+	}
+	return needLocations.concat(res[bestIndex]);
+}
+
+var l = [
+	{lat: 0, lon: 0},
+	{lat: 40, lon: 100},
+	{lat: 41, lon: 101},
+	{lat: 40.5, lon: 100.5}
+]
+
+var sorted = sortMyItems(l);
+
+alert(sorted);

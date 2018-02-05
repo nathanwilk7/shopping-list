@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Shopping Planner</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+    <!-- Latest compiled JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <style>
+      #searchInput {
+      /*background-image: url('/css/searchicon.png');*/ /* Add a search icon to input */
+      /*background-position: 10px 12px;*/ /* Position the search icon */
+      /*background-repeat: no-repeat;*/ /* Do not repeat the icon image */
+      /*width: 100%;*/ /* Full-width */
+      font-size: 16px; /* Increase font-size */
+      padding: 12px 0px 12px 5px; /* Add some padding */
+      border: 1px solid #ddd; /* Add a grey border */
+      margin-top: 20px;
+      margin-bottom: 12px; /* Add some space below the input */
+      }
+      
+      #itemList {
+      /* Remove default list styling */
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+      }
+      
+      #itemList li a {
+      border: 1px solid #ddd; /* Add a border to all links */
+      margin-top: -1px; /* Prevent double borders */
+      background-color: #f6f6f6; /* Grey background color */
+      padding: 12px; /* Add some padding */
+      text-decoration: none; /* Remove default text underline */
+      font-size: 18px; /* Increase the font-size */
+      color: black; /* Add a black text color */
+      display: block; /* Make it into a block element to fill the whole list */
+      }
+      
+      #itemList li a:hover:not(.header) {
+      background-color: #eee; /* Add a hover effect to all links, except for headers */
+      }
+      #myList {
+      /* Remove default list styling */
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+      }
+
+      #myList li {
+      border: 1px solid #ddd; /* Add a border to all links */
+      margin-top: -1px; /* Prevent double borders */
+      background-color: #f6f6f6; /* Grey background color */
+      padding: 12px; /* Add some padding */
+      text-decoration: none; /* Remove default text underline */
+      font-size: 18px; /* Increase the font-size */
+      color: black; /* Add a black text color */
+      display: block; /* Make it into a block element to fill the whole list */
+      }
+      
+      #myList li a {
+      border: 1px solid #ddd; /* Add a border to all links */
+      margin-top: -1px; /* Prevent double borders */
+      background-color: #f6f6f6; /* Grey background color */
+      padding: 12px; /* Add some padding */
+      text-decoration: none; /* Remove default text underline */
+      font-size: 18px; /* Increase the font-size */
+      color: black; /* Add a black text color */
+      /*display: block; *//* Make it into a block element to fill the whole list */
+      }
+      
+      #myList li a:hover:not(.header) {
+      background-color: #eee; /* Add a hover effect to all links, except for headers */
+      }
+    </style>
+  </head>
+  <body>
+    <div class = "col-md-6">
+      <div class='container'><div class='row'><div class='col-md-6'><button style='float: right;' class='btn' onclick='deleteMyItems()'>Delete</button><button style='float: right; margin-right: 10px;' class='btn' onclick='saveList()'>Save</button><button style='float: right; margin-right: 10px;' class='btn' onclick='sortMyItems2()'>Sort</button></div></div></div>
+	<ul id='myList'>
+	</ul>
+    </div>
+    <div class = "col-md-6">
+      <input type="text" id="searchInput" onkeyup="filterList()" placeholder="Search or add item..">
+      <button class='btn' onclick='addItem()'>Add</button>
+	<ul id="itemList">TODO: Sort list on backend
+	</ul>
+    </div>
+	<script>
+	  let baseURL = 'https://ec2-34-203-205-112.compute-1.amazonaws.com';
+	  let getItemsPath = '/items';
+	  let saveMyListPath = '/save';
+	  let getMyListPath = '/list';
+	  let addItemPath = '/add';
+	  var myListVar = [];
+	  var items = [];
+	  getItems(items, displayItems);
+	  getMyList(myListVar);
+
+	  function getItems(items, callback) {
+	  fetch(baseURL + getItemsPath)
+	  .then(res => res.json())
+	  .then((out) => {
+	  items = out;
+	  callback(items);
+	  })
+	  .catch(err => { throw err });
+	  }
+
+	  function saveList() {
+	  // TODO: loop through myListVar and save mylist and locations to web server as 'current list'
+	  $.post(baseURL + saveMyListPath, JSON.stringify(myListVar), function(data, status) {
+	  alert('data' + data + 'status' + status);
+	  });
+	  }
+
+	  function getMyList(myList) {
+	  fetch(baseURL + getMyListPath)
+	  .then(res => res.json())
+	  .then((out) => {
+	  for (var i = 0; i < out.length; ++i) {
+						  appendToMyList(out[i]);
+						  }
+	  })
+	  .catch(err => { throw err });
+	  }
+
+	  function addItem() {
+		var itemName = document.getElementById('searchInput').value;
+		$.post(baseURL + addItemPath, JSON.stringify(newItem(itemName)), function(data, status) {
+		alert('data' + data + 'status' + status);
+		});
+	  document.getElementById('searchInput').value = '';
+	  var thisItem = newItem(itemName);
+	  items.push(thisItem);
+	  appendItem(thisItem);
+	  }
+
+	  function sortMyItems2() {
+	  var myItems = myListVar;
+	  var needLocations = [];
+	  var toPermute = [];
+	  for (var i = 0; i < myItems.length; i++) {
+						  if (myItems[i].lat !== 0) {
+						  toPermute.push(myItems[i]);
+						  } else {
+						  needLocations.push(myItems[i]);
+						  }
+						  }
+						  // sort increasing by lon
+						  for (var i = 1; i < toPermute.length; i++) {
+											  for (var j = i; j > 0; j--) {
+						  if (toPermute[j - 1].lon > toPermute[j].lon) {
+													 var temp = toPermute[j];
+													 toPermute[j] = toPermute[j-1];
+													 toPermute[j-1] = temp;
+													 }
+													 }
+													 }
+						  //var start = {lat: 40.750937, lon: -111.866157};
+						  //var end = {lat: 40.750724, lon: -111.866426};
+						  var finalRes = needLocations.concat(toPermute);
+						  deleteMyItems();
+						  for (var i = 0; i < finalRes.length; i++) {
+											  appendToMyList(finalRes[i]);
+											  }
+											  }
+																				
+	  function deleteMyItems() {
+	  // this shouldn't delete current list from web server, you should just save a new one to overwrite
+	  myListVar = [];
+	  document.getElementById('myList').innerHTML = '';
+	  }
+
+function appendToMyList(arg) {
+	var myListLi = document.createElement('li');
+	var myListA = document.createElement('a');
+	myListA.href = '#';
+	myListA.innerHTML = arg.name;
+	myListA.onclick = function(a) {
+		return function() {if (a.style.textDecoration == 'line-through') {a.style.textDecoration = ''} else {a.style.textDecoration = 'line-through'}}
+	}(myListA);
+	var myListSelect = document.createElement('select');
+	myListSelect.style = 'float:right;';
+	for (var j = 1; j < 11; j++) {
+		var myListSelectOption = document.createElement('option')
+		myListSelectOption.value = j;
+		myListSelectOption.innerHTML = j;
+		myListSelect.appendChild(myListSelectOption);
+	}
+	myListLi.appendChild(myListSelect);
+	if (arg.lat == 0.0) {
+		var myListLocation = document.createElement('button');
+		myListLocation.style = 'float: right; margin-right: 10px;';
+		myListLocation.class = 'btn';
+		myListLocation.innerHTML = 'Location';
+		myListLocation.onclick = function(item) {
+			return function() {
+				if (navigator.geolocation) {
+						navigator.geolocation.getCurrentPosition(function(position) {
+						arg.lat = position.coords.latitude;
+						arg.lon = position.coords.longitude;
+						myListLocation.style.display = 'none';
+					});
+				} else { 
+					alert("Geolocation is not supported by this browser. You may need to enable it in your settings");
+				}
+			}
+		}(arg);
+		myListLi.appendChild(myListLocation);
+	}
+	myListLi.appendChild(myListA);
+	myList.appendChild(myListLi);
+	myListVar.push(arg);
+}
+
+						
+function getDist(start, items, end) {
+	var distSoFar = 0;
+	if (items.length == 0) {
+		return Math.pow(start.lat - end.lat, 2) + Math.pow(start.lon - end.lon, 2);
+	}
+	distSoFar += Math.pow(start.lat - items[0].lat, 2) + Math.pow(start.lon - items[0].lon, 2);
+	for (var i = 1; i < items.length - 1; i++) {
+		distSoFar += Math.pow(items[i].lat - items[i + 1].lat, 2) + Math.pow(items[i].lon - items[i+1].lon, 2);
+	}
+	distSoFar += Math.pow(items[items.length - 1].lat - end.lat, 2) + Math.pow(items[items.length - 1].lon - end.lon, 2);
+	return distSoFar;
+}
+
+function permuteMyItems(a, l, r, res) {
+	if (l === r) {
+		var toPush = []
+		for (var i = 0; i < a.length; i++) {
+			toPush.push(a[i]);
+		}
+		res.push(toPush);
+	} else {
+		for (var i = l; i < r; i++) {
+			var temp = a[l];
+			a[l] = a[i];
+			a[i] = temp;
+			permuteMyItems(a, l + 1, r, res);
+			temp = a[l];
+			a[l] = a[i];
+			a[i] = temp;
+		}
+	}
+}
+
+							function sortMyItems() {
+							var myItems = myListVar;
+	var res = [];
+	var toPermute = []
+	var needLocations = []
+	for (var i = 0; i < myItems.length; i++) {
+		if (myItems[i].lat !== 0) {
+			toPermute.push(myItems[i]);
+		} else {
+			needLocations.push(myItems[i]);
+		}
+	}
+	permuteMyItems(toPermute, 0, toPermute.length, res);
+	var start = {lat: 40.750937, lon: -111.866157};
+	var end = {lat: 40.750724, lon: -111.866426};
+	var bestDist = 999999999;
+	var bestIndex = 0;
+	for (var i = 0; i < res.length; i++) {
+		var curDist = getDist(start, res[i], end);
+		if (curDist < bestDist) {
+			bestDist = curDist;
+			bestIndex = i;
+		}
+					  }
+					  var finalRes = needLocations.concat(res[bestIndex]);
+					  deleteMyItems();
+					  for (var i = 0; i < finalRes.length; i++) {
+										  appendToMyList(finalRes[i]);
+										  }
+}
+										  
+
+										
+
+										  function newItem(name) {
+										  return {'name': name,
+										  'lat': 0.0,
+										  'lon': 0.0,
+										  }
+										  }
+
+										  function displayItems(items) {
+										  for (var i = 0; i < items.length; i++) {
+															  appendItem(items[i]);
+						  
+						  }
+	  }
+
+					
+
+
+															  function appendItem(itemArg) {
+															  var itemList = document.getElementById('itemList');
+															  var myList = document.getElementById('myList');
+															  var item = document.createElement('li');
+															  var itemLink = document.createElement('a');
+															  item.appendChild(itemLink);
+															  itemLink.href = '#';
+															  itemLink.innerHTML = itemArg.name;
+															  itemLink.onclick = function(arg) {
+															  return function() {
+															  appendToMyList(arg);										
+															  }
+															  }(itemArg);
+															  itemList.appendChild(item);
+															  }
+															  
+function filterList() {
+    // Declare variables
+    var input, filter, ul, li, a, i;
+    input = document.getElementById('searchInput');
+    filter = input.value.toUpperCase();
+    ul = document.getElementById("itemList");
+    li = ul.getElementsByTagName('li');
+    
+    // Loop through all list items, and hide those who don't match the search query
+    for (i = 0; i < li.length; i++) {
+		a = li[i].getElementsByTagName("a")[0];
+		if (a.innerHTML.toUpperCase().indexOf(filter) > -1) {
+			li[i].style.display = "";
+        } else {
+			li[i].style.display = "none";
+        }
+	}
+															  }
+
+document.getElementById("searchInput").addEventListener("keydown", function(e) {
+    if (!e) { var e = window.event; }
+
+    // Enter is pressed
+    if (e.keyCode == 13) { addItem(); }
+}, false);															  
+		</script>
+  </body>
+</html>
